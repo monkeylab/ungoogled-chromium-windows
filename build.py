@@ -45,7 +45,7 @@ _PATCH_BIN_RELPATH = Path('/usr/bin/patch')
 
 # Target-specific optimization patches
 _OPTIMIZATION_PATCHES_BY_TARGET: dict[str, tuple[str, ...]] = {
-    'x64': (),
+    'x64': (ungoogled-chromium/windows/win64-avx2.patch),
     'x86': (),
     'arm64': (),
 }

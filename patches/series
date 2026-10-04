@@ -25,4 +25,3 @@ ungoogled-chromium/windows/windows-fix-files-cfg-case.patch
 ungoogled-chromium/windows/windows-fix-v8-snapshot-toolchain-linux-win-arm64.patch
 ungoogled-chromium/windows/windows-fix-rust-toolchain-compat.patch
 ungoogled-chromium/windows/windows-enable-dtlto.patch
-ungoogled-chromium/windows/win64-avx2.patch
