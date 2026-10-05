@@ -34,12 +34,12 @@
 +
 +    "-Ctarget-cpu=x86-64-v3",
 +    "-Cllvm-args=-fp-contract=fast",
-+    "-Ztune-cpu=znver3",
++    "-Ztune-cpu=generic",
 +    "-Ctarget-feature=+prefer-no-gather,+prefer-no-scatter",
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1280,12 +1285,31 @@ config("disallow_unstable_features") {
+@@ -1280,12 +1285,33 @@ config("disallow_unstable_features") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
@@ -54,10 +54,13 @@
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
 +      ldflags += [ "-opt:lldltocgo=3" ]
 +      ldflags += [
++        "/Brepro",
++        "/prefetch-inputs",
++        "/DEBUG:GHASH",
 +        "-mllvm:-adce-remove-loops=true",
 +        "-mllvm:-x86-align-branch-boundary=32",
 +        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
-+        # "-mllvm:-polly",
++        "/guard:ehcont",
 +    ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
@@ -67,18 +70,20 @@
 +        "-Wl,-mllvm,-x86-align-branch-boundary=32",
 +        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
 +        "-Wl,-z,pack-relative-relocs",
-+        # "-Wl,-mllvm,-polly",
 +      ]
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1319,8 +1343,39 @@ config("thinlto_optimize_max") {
+@@ -1319,8 +1345,41 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
 +      ldflags += [ "-opt:lldltocgo=3" ]
 +      ldflags += [
-+        "-mllvm:-import-hot-multiplier=15",
++        "/Brepro",
++        "/prefetch-inputs",
++        "/DEBUG:GHASH",
++        "-mllvm:-import-hot-multiplier=20",
 +        "-mllvm:-adce-remove-loops=true",
 +        "-mllvm:-enable-gvn-hoist",
 +        "-mllvm:-enable-gvn-sink",
@@ -89,13 +94,13 @@
 +        "-mllvm:-x86-align-branch-boundary=32",
 +        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
 +        "-mllvm:-x86-cmov-converter",
-+        "-mllvm:-polly",
++        "/guard:ehcont",
 +      ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
 +      ldflags += [ "-Wl,--lto-CGO3" ]
 +      ldflags += [
-+        "-Wl,-mllvm,-import-hot-multiplier=15",
++        "-Wl,-mllvm,-import-hot-multiplier=20",
 +        "-Wl,-mllvm,-adce-remove-loops=true",
 +        "-Wl,-mllvm,-enable-gvn-hoist",
 +        "-Wl,-mllvm,-enable-gvn-sink",
@@ -107,12 +112,11 @@
 +        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
 +        "-Wl,-mllvm,-x86-cmov-converter",
 +        "-Wl,-z,pack-relative-relocs",
-+        "-Wl,-mllvm,-polly",
 +      ]
      }
  
      if (toolchain_supports_rust_thin_lto) {
-@@ -1787,7 +1842,7 @@ config("runtime_library") {
+@@ -1787,7 +1846,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -121,7 +125,20 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -2737,10 +2792,13 @@ config("optimize_max") {
+@@ -2028,7 +2087,11 @@ config("default_warnings") {
+     if (is_win) {
+       # TODO(thakis): https://crbug.com/617318
+       # Currently RBE can not handle case sensitiveness for windows well.
+-      cflags += [ "-Wno-nonportable-include-path" ]
++      cflags += [
++        "/clang:-gcodeview-ghash",
++        "-Wno-deprecated-attributes",
++        "-Wno-nonportable-include-path",
++      ]
+     }
+ 
+     if (is_fuchsia) {
+@@ -2737,10 +2800,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
@@ -137,34 +154,15 @@
    rustflags = [ "-Copt-level=3" ]
  }
 
---- a/build/config/compiler_cpu_abi.gn
-+++ b/build/config/compiler_cpu_abi.gn
-@@ -55,7 +55,13 @@ if ((is_posix && !is_apple) || is_fuchsia) {
-       cpu_abi_cflags += [ "-m64" ]
-       cpu_abi_ldflags += [ "-m64" ]
-     }
--    cpu_abi_cflags += [ "-msse3" ]
-+    cpu_abi_cflags += [
-+      "-march=x86-64-v3",
-+      "-mtune=znver3",
-+      "-mno-gather",
-+      "-mno-scatter",
-+      # "-mno-bmi2",
-+    ]
-     if (target_os == "chromeos" && cros_target_cpu_arch != "" &&
-         is_a_target_toolchain) {
-       cpu_abi_cflags += [ "-march=$cros_target_cpu_arch" ]
-
-
 --- a/build/config/win/BUILD.gn
 +++ b/build/config/win/BUILD.gn
-@@ -122,7 +122,30 @@ config("compiler") {
+@@ -122,7 +122,29 @@ config("compiler") {
      # microarchitecture. MSVC only supports a subset of architectures, and the
      # next step after SSE2 will be AVX.
      if (current_cpu == "x86" || current_cpu == "x64") {
 -      cflags += [ "-msse3" ]
 +      cflags += [
-+        "-mtune=znver3",
++        "-mtune=generic",
 +        "-msse3",
 +        "-mssse3",
 +        "-msse4.1",
@@ -185,7 +183,6 @@
 +        "-mxsaveopt",
 +        "-mno-gather",
 +        "-mno-scatter",
-+        "/clang:-w",
 +      ]
      }
  
