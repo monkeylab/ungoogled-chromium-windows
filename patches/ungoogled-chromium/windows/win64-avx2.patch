@@ -51,7 +51,7 @@
      }
  
      if (is_win) {
-@@ -1329,8 +1348,26 @@ config("thinlto_optimize_max") {
+@@ -1329,8 +1349,27 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -71,6 +71,7 @@
 +        "-mllvm:-x86-align-branch-boundary=32",
 +        "-mllvm:-x86-align-branch=jcc+jmp+indirect",
 +        "-mllvm:-x86-cmov-converter",
++        "-mllvm:-polly",
 +        "/guard:ehcont",
 +      ]
      } else {
@@ -78,7 +79,7 @@
      }
  
      if (is_win) {
-@@ -1797,7 +1834,7 @@ config("runtime_library") {
+@@ -1797,7 +1835,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -87,7 +88,7 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -2038,7 +2075,11 @@ config("default_warnings") {
+@@ -2038,7 +2076,11 @@ config("default_warnings") {
      if (is_win) {
        # TODO(thakis): https://crbug.com/617318
        # Currently RBE can not handle case sensitiveness for windows well.
@@ -100,7 +101,7 @@
      }
  
      if (is_fuchsia) {
-@@ -2747,10 +2788,13 @@ config("optimize_max") {
+@@ -2747,10 +2789,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
