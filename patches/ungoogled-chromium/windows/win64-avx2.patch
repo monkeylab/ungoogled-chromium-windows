@@ -1,20 +1,5 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -539,10 +539,10 @@ config("compiler") {
-   # Linux/Android/Fuchsia common flags setup.
-   # ---------------------------------
-   if (is_linux || is_chromeos || is_android || is_fuchsia) {
--    asmflags += [ "-fPIC" ]
--    cflags += [ "-fPIC" ]
--    ldflags += [ "-fPIC" ]
--    rustflags += [ "-Crelocation-model=pic" ]
-+    asmflags += [ "-fPIC", "-w", ]
-+    cflags += [ "-fPIC", "-w", ]
-+    ldflags += [ "-fPIC", "-w", ]
-+    rustflags += [ "-Crelocation-model=pic", "-Awarnings", ]
- 
-     if (!is_clang) {
-       # Use pipes for communicating between sub-processes. Faster.
 @@ -665,9 +665,9 @@ config("compiler") {
  
      # TODO(crbug.com/40192287): Investigate why/if this should be needed.
@@ -22,8 +7,7 @@
 -      cflags += [ "/clang:-ffp-contract=off" ]
 +      cflags += [ "/clang:-ffp-contract=fast" ]
      } else {
--      cflags += [ "-ffp-contract=off" ]
-+      cflags += [ "-ffp-contract=fast" ]
+       cflags += [ "-ffp-contract=off" ]
      }
  
      # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF.
@@ -34,12 +18,12 @@
 +
 +    "-Ctarget-cpu=x86-64-v3",
 +    "-Cllvm-args=-fp-contract=fast",
-+    "-Ztune-cpu=skylake",
++    "-Ztune-cpu=generic",
 +    "-Ctarget-feature=+prefer-no-gather,+prefer-no-scatter",
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1280,12 +1285,33 @@ config("disallow_unstable_features") {
+@@ -1280,12 +1285,26 @@ config("disallow_unstable_features") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
@@ -64,17 +48,10 @@
 +    ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
-+      ldflags += [ "-Wl,--lto-CGO3" ]
-+      ldflags += [
-+        "-Wl,-mllvm,-adce-remove-loops=true",
-+        "-Wl,-mllvm,-x86-align-branch-boundary=32",
-+        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
-+        "-Wl,-z,pack-relative-relocs",
-+      ]
      }
  
      if (is_win) {
-@@ -1329,8 +1355,41 @@ config("thinlto_optimize_max") {
+@@ -1329,8 +1348,26 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -98,25 +75,10 @@
 +      ]
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
-+      ldflags += [ "-Wl,--lto-CGO3" ]
-+      ldflags += [
-+        "-Wl,-mllvm,-import-hot-multiplier=20",
-+        "-Wl,-mllvm,-adce-remove-loops=true",
-+        "-Wl,-mllvm,-enable-gvn-hoist",
-+        "-Wl,-mllvm,-enable-gvn-sink",
-+        "-Wl,-mllvm,-machine-sink-split",
-+        "-Wl,-mllvm,-phi-node-folding-threshold=4",
-+        "-Wl,-mllvm,-sink-insts-to-avoid-spills",
-+        "-Wl,-mllvm,-spec-exec-max-speculation-cost=15",
-+        "-Wl,-mllvm,-x86-align-branch-boundary=32",
-+        "-Wl,-mllvm,-x86-align-branch=jcc+jmp+indirect",
-+        "-Wl,-mllvm,-x86-cmov-converter",
-+        "-Wl,-z,pack-relative-relocs",
-+      ]
      }
  
      if (is_win) {
-@@ -1797,7 +1856,7 @@ config("runtime_library") {
+@@ -1797,7 +1834,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -125,7 +87,7 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -2038,7 +2097,11 @@ config("default_warnings") {
+@@ -2038,7 +2075,11 @@ config("default_warnings") {
      if (is_win) {
        # TODO(thakis): https://crbug.com/617318
        # Currently RBE can not handle case sensitiveness for windows well.
@@ -138,7 +100,7 @@
      }
  
      if (is_fuchsia) {
-@@ -2747,10 +2810,13 @@ config("optimize_max") {
+@@ -2747,10 +2788,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
@@ -148,8 +110,7 @@
    } else if (optimize_for_fuzzing) {
      cflags = [ "-O1" ] + common_optimize_on_cflags
    } else {
--    cflags = [ "-O2" ] + common_optimize_on_cflags
-+    cflags = [ "-O3" ] + common_optimize_on_cflags
+     cflags = [ "-O2" ] + common_optimize_on_cflags
    }
    rustflags = [ "-Copt-level=3" ]
  }
@@ -162,7 +123,7 @@
      if (current_cpu == "x86" || current_cpu == "x64") {
 -      cflags += [ "-msse3" ]
 +      cflags += [
-+        "-mtune=skylake",
++        "-mtune=generic",
 +        "-msse3",
 +        "-mssse3",
 +        "-msse4.1",
