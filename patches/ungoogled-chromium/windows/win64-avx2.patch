@@ -23,7 +23,7 @@
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1280,12 +1285,22 @@ config("disallow_unstable_features") {
+@@ -1280,10 +1285,20 @@ config("disallow_unstable_features") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
@@ -45,9 +45,7 @@
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
      }
- 
-     if (is_win) {
-@@ -1329,8 +1345,23 @@ config("thinlto_optimize_max") {
+@@ -1329,6 +1344,21 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -69,9 +67,7 @@
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
      }
- 
-     if (is_win) {
-@@ -1797,7 +1827,7 @@ config("runtime_library") {
+@@ -1774,7 +1804,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -80,20 +76,7 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -2038,7 +2068,11 @@ config("default_warnings") {
-     if (is_win) {
-       # TODO(thakis): https://crbug.com/617318
-       # Currently RBE can not handle case sensitiveness for windows well.
--      cflags += [ "-Wno-nonportable-include-path" ]
-+      cflags += [
-+        "/clang:-gcodeview-ghash",
-+        "-Wno-deprecated-attributes",
-+        "-Wno-nonportable-include-path",
-+      ]
-     }
- 
-     if (is_fuchsia) {
-@@ -2747,10 +2781,13 @@ config("optimize_max") {
+@@ -2724,10 +2754,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
@@ -107,10 +90,9 @@
    }
    rustflags = [ "-Copt-level=3" ]
  }
-
 --- a/build/config/win/BUILD.gn
 +++ b/build/config/win/BUILD.gn
-@@ -122,7 +122,29 @@ config("compiler") {
+@@ -122,7 +122,30 @@ config("compiler") {
      # microarchitecture. MSVC only supports a subset of architectures, and the
      # next step after SSE2 will be AVX.
      if (current_cpu == "x86" || current_cpu == "x64") {
@@ -137,6 +119,7 @@
 +        "-mxsaveopt",
 +        "-mno-gather",
 +        "-mno-scatter",
++        "/clang:-w",
 +      ]
      }
  
