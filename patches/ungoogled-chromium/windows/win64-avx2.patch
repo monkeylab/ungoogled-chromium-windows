@@ -1,5 +1,20 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
+@@ -539,10 +539,10 @@ config("compiler") {
+   # Linux/Android/Fuchsia common flags setup.
+   # ---------------------------------
+   if (is_linux || is_chromeos || is_android || is_fuchsia) {
+-    asmflags += [ "-fPIC" ]
+-    cflags += [ "-fPIC" ]
+-    ldflags += [ "-fPIC" ]
+-    rustflags += [ "-Crelocation-model=pic" ]
++    asmflags += [ "-fPIC", "-w", ]
++    cflags += [ "-fPIC", "-w", ]
++    ldflags += [ "-fPIC", "-w", ]
++    rustflags += [ "-Crelocation-model=pic", "-Awarnings", ]
+
+     if (!is_clang) {
+       # Use pipes for communicating between sub-processes. Faster.
 @@ -665,9 +665,9 @@ config("compiler") {
  
      # TODO(crbug.com/40192287): Investigate why/if this should be needed.
@@ -45,7 +60,7 @@
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
      }
-@@ -1329,6 +1344,21 @@ config("thinlto_optimize_max") {
+@@ -1328,6 +1343,21 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -67,7 +82,7 @@
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
      }
-@@ -1774,7 +1837,7 @@ config("runtime_library") {
+@@ -1772,7 +1835,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -76,7 +91,7 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -2724,10 +2787,13 @@ config("optimize_max") {
+@@ -2722,10 +2785,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
