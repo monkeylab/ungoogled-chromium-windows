@@ -46,7 +46,7 @@ _PATCH_BIN_PATH = Path('/usr/bin/patch')
 
 # Target-specific optimization patches
 _OPTIMIZATION_PATCHES_BY_TARGET: dict[str, tuple[str, ...]] = {
-    'x64': ('ungoogled-chromium/windows/windows-x64-optimizations.patch',),
+    'x64': ('ungoogled-chromium/windows/win64-avx2.patch',),
     'x86': (),
     'arm64': (),
 }
@@ -140,6 +140,7 @@ def _get_windows_components(target: WindowsTarget):
         'typescript',
         'directx-headers',
         'webauthn',
+        'multimedia-redirection',
         'rust-x64',
         target.windows_rust_std_selector,
     ]
