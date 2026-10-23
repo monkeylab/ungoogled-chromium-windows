@@ -39,7 +39,7 @@
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1280,10 +1285,27 @@ config("disallow_unstable_features") {
+@@ -1280,11 +1285,28 @@ config("disallow_unstable_features") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
@@ -68,7 +68,8 @@
 +        "-Wl,-z,pack-relative-relocs",
 +      ]
      }
-@@ -1328,6 +1350,37 @@ config("thinlto_optimize_max") {
+     if (is_win) {
+@@ -1328,7 +1350,38 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -106,7 +107,8 @@
 +        "-Wl,-mllvm,-polly",
 +      ]
      }
-@@ -1772,7 +1858,7 @@ config("runtime_library") {
+     if (is_win) {
+@@ -1805,7 +1858,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -115,7 +117,7 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -2722,10 +2808,13 @@ config("optimize_max") {
+@@ -2755,10 +2808,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
