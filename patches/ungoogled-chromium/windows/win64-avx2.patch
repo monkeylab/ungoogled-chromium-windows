@@ -70,7 +70,7 @@
      }
  
      if (is_win) {
-@@ -1328,8 +1350,39 @@ config("thinlto_optimize_max") {
+@@ -1329,8 +1351,39 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -110,7 +110,7 @@
      }
  
      if (is_win) {
-@@ -1805,7 +1858,7 @@ config("runtime_library") {
+@@ -1807,7 +1860,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -119,7 +119,7 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -2755,10 +2808,13 @@ config("optimize_max") {
+@@ -2757,10 +2810,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
