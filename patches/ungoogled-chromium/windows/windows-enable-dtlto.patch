@@ -1,9 +1,10 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -1287,6 +1287,15 @@ config("thinlto_optimize_default") {
+@@ -1287,6 +1287,16 @@ config("thinlto_optimize_default") {
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
      }
++
 +    if (is_win) {
 +      ldflags += [
 +        "/thinlto-distributor:/usr/bin/python3",
@@ -16,10 +17,11 @@
  
      if (toolchain_supports_rust_thin_lto) {
        # We always point Rust to a linker that performs LTO, so we don't want
-@@ -1322,6 +1331,15 @@ config("thinlto_optimize_max") {
+@@ -1322,6 +1332,16 @@ config("thinlto_optimize_max") {
      } else {
        ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
      }
++
 +    if (is_win) {
 +      ldflags += [
 +        "/thinlto-distributor:/usr/bin/python3",
