@@ -16,11 +16,11 @@
 - Gather/Scatter Avoidance: Disables gather and scatter instructions in C/C++ and Rust to prevent latency regressions on CPUs with slow microcode implementations.
 
 ### 1.3 `windows-additional-feature-overrides.patch` (Feature Overrides & Background De-bloating)
-- Client AI & On-Device ML: Disables the Desktop AI assistant (Glic), Private AI, DevTools AI code features, and history passage embeddings.
+- Client AI & On-Device ML: Disables the Desktop AI assistant (Glic), Private AI, WebMCP attack surfaces (`DeclarativeWebMCP`, `WebMCP`, `WebMCPDeclarativeFileInput`, `WebMCPFormAssociatedCustomElements`), DevTools AI code features, and history passage embeddings.
 - Speculative Networking & Preloading: Disables bookmark and NTP Prerender2, Navigation Predictor, Top Chrome WebUI preloading, and speculative ServiceWorker warm-up.
 - Process De-bloating: Disables persistent spare renderer processes for the default search engine.
-- Telemetry & Metrics: Disables Structured Metrics, Critical User Journeys, Notification Telemetry, cold-start OneDrive sync state probing (`kCloudSyncedFolderChecker`), and BrowserContext-bound digital credentials service instantiation.
-- Performance & Memory Tuning: Locks background tab freezing under critical memory pressure (`kDisablePeriodicUnfreezeOnCriticalMemoryPressure`) and boosts closing tab priority (`kBoostClosingTabs`) for smoother tab strip animations.
+- Telemetry & Metrics: Disables Structured Metrics, Critical User Journeys, Notification Telemetry, cold-start OneDrive sync state probing (`kCloudSyncedFolderChecker`), and BrowserContext-bound digital credentials service instantiation; removes the delayed startup TPM benchmark registration (`crypto::MaybeMeasureTpmOperations`) and its now-unused crypto/channel includes.
+- Performance & Memory Tuning: Locks background tab freezing under critical memory pressure (`kDisablePeriodicUnfreezeOnCriticalMemoryPressure`), eagerly resolves core delay-loaded DLL imports on startup (`kEagerlyResolveCoreDllsImports`) to prevent UI-thread jank, and boosts closing tab priority (`kBoostClosingTabs`) for smoother tab strip animations.
 - Security & UI Settings: Enables strict origin isolation and network service sandboxing; enables one-click tab audio muting and modern WebUI refresh.
 
 ### 1.4 `windows-multiple-search-engines-context-menu.patch` (Multi-Engine Context Menu Search)
@@ -45,17 +45,46 @@
 ### 1.9 `windows-disable-pepc-elements.patch` (PEPC HTML Declarative Permission Elements Hardening)
 - PEPC Element Deactivation: Disables `<camera>`, `<microphone>`, `<geolocation>`, and `<usermedia>` in-page permission elements (`CameraAndMicrophoneElements`, `GeolocationElement`, `UserMediaElement`, and `UserMediaElementLegacy` in `runtime_enabled_features.json5`), preventing clickjacking and anchor-based permission elevation while routing all hardware prompts through the trusted Omnibox origin bubble.
 
-### 1.10 `windows-disable-ai-page-content-tracking.patch` (Render-Side Password and Subframe Tracking Cutoff)
-- AI Page Content Tracking Deactivation: Disables `AIPageContentTrackedElementsPassword` and `AIPageContentTrackedElementsIframe` in `runtime_enabled_features.json5`, eliminating unnecessary per-frame heuristic password box coordinate tracking and compositor frame metadata serialization.
+### 1.10 `windows-disable-ai-page-content-tracking.patch` (Render-Side Password, Subframe and SVG Tracking Cutoff)
+- AI Page Content Tracking Deactivation: Disables `AIPageContentTrackedElementsPassword`, `AIPageContentTrackedElementsIframe`, `AIPageContentIncludeSVGSubtree`, and `AIPageContentLabelExpandFallbackSources` in `runtime_enabled_features.json5`, eliminating unnecessary per-frame heuristic password box coordinate tracking, compositor frame metadata serialization, actionable APC label fallback source expansions, and recursive SVG layout tree traversal for Screen AI / Annotated Page Content extraction.
 
 ### 1.11 `windows-disable-webrtc-diagnostic-logging.patch` (WebRTC Diagnostic Logging Interface Deactivation)
 - WebRTC Diagnostic Logging Blocking: Clears the default desktop status of `RTCDiagnosticLogging` in `runtime_enabled_features.json5`, removing `startDiagnosticLogging` and `stopDiagnosticLogging` extensions from `RTCPeerConnection` to eliminate client fingerprinting surfaces and unused Mojo IPC channels.
+
+### 1.12 `windows-hide-navigator-webdriver.patch` (Navigator WebDriver Automation Detection Mitigation)
+- WebDriver Property Suppression: Adds `kHideNavigatorWebDriver` feature in `features.h/cc`. When enabled, `Navigator::webdriver()` immediately returns `false` at the Blink entry point, neutralizing both static automation flags and CDP dynamic emulation overrides (`probe::ApplyAutomationOverride`).
+
+### 1.13 `windows-spoof-webgpu-adapter-info.patch` (WebGPU Adapter Information & WebGL Linkage)
+- WebGPU Adapter Spoofing: Extends `GPUAdapter::CreateAdapterInfoForAdapter()` in `gpu_adapter.cc` to synchronize with `kSpoofWebGLInfo`. Maps GPU vendor and microarchitecture tokens (e.g. `nvidia` -> `maxwell`/`ampere`, `intel` -> `gen-12lp`, `amd` -> `rdna-2`) to eliminate contradictions between WebGL and WebGPU hardware disclosures.
+
+### 1.14 `windows-deterministic-canvas-noise.patch` (Deterministic Canvas Edge Noise & Readout Alignment)
+- Deterministic Edge Anti-Aliasing Noise: Replaces Bromite's random pixel mutation with a deterministic FNV-1a hash applied only to edge gradient pixels. Skips transparent and 4-neighbor identical solid color blocks to defeat pure-color trap tests. Pre-noises `CanvasAsyncBlobCreator` to guarantee identical pixel hashes across `toDataURL()`, `toBlob()`, and `getImageData()`.
+
+### 1.15 `windows-spoof-webgl-params.patch` (WebGL Extended Parameter Table & ReadPixels Edge Noise)
+- WebGL Parameter Interception & Readback Noise: Intercepts over 80 GL parameter enums in `getParameter()` via a static lookup table (`kSpoofedGlIntParams`) when `kSpoofWebGLInfo` is enabled. In `ReadPixelsHelper`, applies deterministic edge noise while preserving solid color geometries.
+
+### 1.16 `windows-timezone-sandbox.patch` (Independent Renderer Timezone Sandbox & IPC Whitelist)
+- Per-Process Timezone Sandboxing: Registers `--timezone` in `content_switches.h/cc` and `render_process_host_impl.cc`'s renderer switch propagation whitelist. In `TimeZoneController::Init()`, sets the virtual host timezone and returns early to prevent asynchronous host OS clock updates from overwriting the sandboxed timezone, while preserving CDP `Emulation.setTimezoneOverride` capabilities.
+
+### 1.17 `windows-permissions-consistency.patch` (Permissions and Notifications State Consistency)
+- Undecided State Alignment: Synchronizes `Notification.permission` and `navigator.permissions.query({name: 'notifications'})` in undecided states (`ASK`) via `--notifications-permission`. Enforces strict `DENIED` status in cross-origin iframes to eliminate Headless discrepancy signals.
+
+### 1.18 `windows-font-fallback-filter.patch` (System Font Fallback Blacklist Filtering)
+- Font Enumeration Defense: Blocks blacklisted font queries in `FontCache::GetFontPlatformData()` via `--font-blacklist` and `--fonts-hidden`, while safeguarding standard CSS generic font families (`serif`, `sans-serif`, `monospace`, `system-ui`, etc.) to prevent layout collapse.
+
+### 1.19 `windows-media-devices-limit.patch` (Narrowing-Only Media Device Enumeration Truncation)
+- Media Device Count Truncation: Caps the number of enumerated audio/video devices via `--limit-media-devices` without fabricating non-existent devices, preserving Chromium's native salted `deviceId` hashing to ensure `getUserMedia()` compatibility.
+
+### 1.20 `windows-speech-voices-narrow.patch` (Speech Synthesis Voice Truncation & Localized Aliases)
+- Voice List Narrowing: Limits returned voices in `speechSynthesis.getVoices()` via `--limit-speech-voices` and `--speech-voices`, with built-in mapping for localized Windows Chinese voice names.
+
+### 1.21 `windows-geolocation-override.patch` (Smooth Continuous Virtual Geolocation Provider)
+- Continuous Natural Geolocation: Implements `VirtualLocationProvider` via `--geolocation=lat,lng` in `chrome_content_browser_client.cc`, supplying smooth continuous sensor micro-drifts (~10cm) with advancing timestamps to resolve CDP static timestamp freeze tells, while forwarding all anti-fingerprint CLI switches to renderer child processes.
 
 ## 2. Curated Brave Patches (`patches/brave/`)
 
 ### 2.1 Resource De-bloating & AI Pruning
 - `disable-web-platform-ai.patch`: Disables Web Platform AI APIs (`AIPromptAPI`, `AIPromptAPIMultimodalInput`, `AIProofreaderAPI`, `AIRewriterAPI`, `AISummarizationAPI`, and `AIWriterAPI` in `runtime_enabled_features.json5`), preventing web pages from downloading or running on-device AI models.
-- `disable-history-embeddings.patch`: Sets `kEnabledByDefaultForDesktopOnly` to `false` in `history_embeddings_utils.cc`, disabling passage embedding generation on browsing history.
 - `consolidated-features-overrides.patch`: Disables bookmark and New Tab Page Prerender2 triggers, DevTools Console Insights, DevTools AI code features, WebUI Omnibox Popups, and tab hover card thumbnail previews.
 - `kill-profile-reset-report-uploader.patch`: Empties `ResetReportUploader::DispatchReport` in `chrome/browser/profile_resetter/reset_report_uploader.cc` to stop telemetry uploads when resetting browser profiles.
 
@@ -92,7 +121,8 @@
 - `disable-ad-topics-and-etc.patch`: Disables Privacy Sandbox tracking features, including the Topics API and Private Aggregation, in `network::features`.
 - `disable-history-clusters.patch`: Disables History Clusters (Journeys) grouping and background analysis.
 - `clean-omnibox-suggestions.patch`: Removes Google promotional action buttons ("pedals") from omnibox suggestions.
-- `ridiculous-google-compat-exceptions.patch` & `degoogle-context-menu.patch`: Removes hardcoded Google sign-in exceptions and unhooks Google Search / Google Lens from context menus.
+- `ridiculous-google-compat-exceptions.patch`: Removes hardcoded Google sign-in exceptions.
+- `degoogle-context-menu.patch`: Strips Google Search, Lens, Gemini, Live Caption, QR code, Translate, Reading Mode, and Reading List items from tab, page, and link context menus.
 
 ### 3.4 Ergonomics & Web Content Control
 - `shift-right-click-context-menu.patch`: Forces the browser's native context menu to open on `Shift + Right-Click`, bypassing pages that block right-clicking.
@@ -112,7 +142,7 @@
 ## 4. Curated Cromite Patches (`patches/cromite/`)
 
 ### 4.1 Anti-Fingerprinting & Hardware Masking
-- `AudioBuffer-AnalyserNode-fp-mitigations.patch`: Adds subtle pseudo-random noise to WebAudio buffers and `AnalyserNode` outputs, preventing audio hardware and DAC fingerprinting.
+- `AudioBuffer-AnalyserNode-fp-mitigations.patch`: Adds deterministic FNV-1a hash perturbation (controlling delta < 2.55e-5) to WebAudio buffers and `AnalyserNode` outputs based on sample index, with strict 0Hz silence protection (`data == 0.0f`) to prevent audio hardware fingerprinting without non-deterministic hash drift across repeated offline renders.
 - `High-Resolution-Timing-Mitigation.patch`: Clamps performance timer resolution with jitter in `time_clamper.cc`, protecting against timing-based side-channel attacks and execution profiling.
 - `Fonts-fingerprinting-mitigation.patch`: Restricts local system font enumeration in Blink to limit font-based tracking.
 - `Media-fingerprinting-mitigations.patch`: Restricts video decoder capability enumeration in WebCodecs (`isConfigSupported`) to prevent hardware codec fingerprinting.
