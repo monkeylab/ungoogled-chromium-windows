@@ -1,17 +1,14 @@
 name: build-x64
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - '*'
 
 permissions:
   contents: read
   actions: read
 
 concurrency:
-  group: build-x64-${{ github.ref }}
-  cancel-in-progress: false
+  group: build-x64
+  cancel-in-progress: true
 
 jobs:
   build:
