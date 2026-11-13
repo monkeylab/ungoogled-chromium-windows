@@ -35,7 +35,7 @@
 +    "-Ctarget-cpu=x86-64-v3",
 +    "-Cllvm-args=-fp-contract=fast",
 +    "-Ztune-cpu=generic",
-+    "-Ctarget-feature=+prefer-no-gather,+prefer-no-scatter",
++    #"-Ctarget-feature=+prefer-no-gather,+prefer-no-scatter",
    ]
  
    if (!is_win || force_rustc_color_output) {
