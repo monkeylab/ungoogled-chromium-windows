@@ -81,12 +81,22 @@
 ### 1.21 `windows-geolocation-override.patch` (Smooth Continuous Virtual Geolocation Provider)
 - Continuous Natural Geolocation: Implements `VirtualLocationProvider` via `--geolocation=lat,lng` in `chrome_content_browser_client.cc`, supplying smooth continuous sensor micro-drifts (~10cm) with advancing timestamps to resolve CDP static timestamp freeze tells, while forwarding all anti-fingerprint CLI switches to renderer child processes.
 
+### 1.22 `windows-clipboard-off-the-record.patch` (Direct-Write Clipboard Incognito Isolation)
+- Incognito OS Clipboard History Leak Prevention: Invokes `MarkAsOffTheRecord()` in `RenderViewContextMenu` ("Copy link address" and "Copy link text") and `FindBarView`, preventing URLs and text copied in incognito mode from leaking into Windows 10/11 clipboard history (`Win + V`) or syncing to Microsoft Cloud Clipboard.
+
+### 1.23 `windows-block-tsf-recall-learning.patch` (Windows 11 Recall & TSF Cloud IME Learning Blocking)
+- OS-Level Screen & Input Capture Mitigation: Returns `false` unconditionally in `WebContentsImpl::ShouldDoLearning()` and `OmniboxViewViews::Init()`, signaling `IS_PRIVATE` to Windows Text Services Framework (TSF) to prevent Windows 11 Copilot+ Recall OCR capture and cloud IME dictionary learning.
+
+### 1.24 `windows-keep-window-open-on-last-tab.patch` (Keep Window Open on Closing Last Tab)
+- Accidental Window Close Guard: Intercepts `Browser::TabStripEmpty()` for normal windows to asynchronously open a new tab instead of terminating the window. Gracefully exempts cross-window tab drags (`kInsertedIntoOtherTabStrip`), popups, DevTools, and explicit window close requests.
+
 ## 2. Curated Brave Patches (`patches/brave/`)
 
 ### 2.1 Resource De-bloating & AI Pruning
 - `disable-web-platform-ai.patch`: Disables Web Platform AI APIs (`AIPromptAPI`, `AIPromptAPIMultimodalInput`, `AIProofreaderAPI`, `AIRewriterAPI`, `AISummarizationAPI`, and `AIWriterAPI` in `runtime_enabled_features.json5`), preventing web pages from downloading or running on-device AI models.
-- `consolidated-features-overrides.patch`: Disables bookmark and New Tab Page Prerender2 triggers, DevTools Console Insights, DevTools AI code features, WebUI Omnibox Popups, and tab hover card thumbnail previews.
+- `consolidated-features-overrides.patch`: Disables bookmark and New Tab Page Prerender2 triggers, DevTools Console Insights, DevTools AI code features, tab hover card thumbnail previews, speculative ZeroSuggest prewarming (`kPrewarm`), mic/camera autoplay escalation (`kAutoplayBypassForMicCamera`), and screen-share transient activation (`kGetDisplayMediaConfersActivation`).
 - `kill-profile-reset-report-uploader.patch`: Empties `ResetReportUploader::DispatchReport` in `chrome/browser/profile_resetter/reset_report_uploader.cc` to stop telemetry uploads when resetting browser profiles.
+- `chrome-browser-media-webrtc-webrtc_event_log_uploader.cc.patch` & `chrome-browser-media-webrtc-webrtc_log_uploader.cc.patch`: Blocks WebRTC RTP event log and text diagnostic uploads to Google endpoints and cleans up local diagnostic dump files.
 
 ### 2.2 System Security & Process Hardening
 - `crashpad-prune-win-environment-block.patch`: Removes the PEB environment variable block from Crashpad minidumps on Windows so tokens and environment variables do not leak into crash reports.
@@ -100,6 +110,7 @@
 - `suppress-undo-tab-close-toast.patch`: Suppresses the "Undo closed tab" snackbar notification in `browser_commands.cc`.
 - `hide-cookie-controls-location-bar-icon.patch`: Hides the third-party cookie blocking icon from the omnibox.
 - `disable-global-signin-promos.patch`: Disables the first-run account selection screen and desktop sign-in promotional banners.
+- `chrome-browser-ui-tabs-recent_tabs_sub_menu_model.cc.patch`: Removes Google sign-in promotional banners from the "Tabs from other devices" submenu when signed out.
 
 ## 3. Curated Helium Patches (`patches/helium/`)
 
@@ -108,11 +119,21 @@
 - `lazy-session-restore.patch`: Enables lazy session restore in `browser_tabrestore.h`; only the active tab loads on startup, while background tabs remain unloaded until clicked.
 - `infinite-tab-freezing.patch`: Removes background tab freezing timeouts in `components/performance_manager/features.cc`, keeping idle tabs frozen indefinitely without periodic background wakeups.
 - `hibernate-tab-context-menu.patch`: Adds a "Hibernate Tab" option to the tab context menu to discard individual tabs manually.
+- `prioritize-platform-policy-loading.patch`: Prioritizes enterprise and platform configuration policy loading over background tasks to avoid race conditions during startup.
+- `tab-favicon-retention.patch`: Retains previous same-origin favicons during navigation and session restoration to prevent blank flicker on slow connections or discarded tabs.
+- `tab-icon.patch`: Differentiates hibernated and discarded tabs with a clean grayscale shader while preserving loading throbber animations and avoiding UI text changes.
 
 ### 3.2 Display Energy Efficiency & Subpixel Rendering
 - `add-low-power-framerate-flag.patch`: Adds a flag to cap rendering framerate, saving battery on high-refresh-rate (120Hz+) screens.
 - `dont-antialias-rects.patch`: Disables non-antialiased rectangle draws in `ui/views/view.cc` under fractional scaling (125%, 150%, etc.), fixing visible seam lines and subpixel jitter.
 - `disable-ink-ripple-effect.patch`: Removes the Material Design ink ripple animation in `platform_style.h` for faster, click-responsive UI feedback.
+- `fix-windows-ui-position.patch`: Fixes tab strip and window caption top padding coordinate calculation on Windows.
+- `generate-standard-qr-codes.patch`: Replaces custom dino-centered QR codes with standard high-contrast square modules and square locators.
+- `exclusive-access-bubble.patch`: Speeds up full-screen notification slide duration and styles prompt bubbles cleanly.
+- `square-interstitial-buttons.patch`: Applies standard modern rounded button aesthetics to interstitial security pages.
+- `toolbar-window-frame-hit-test.patch`: Allows empty non-interactive spaces in the top toolbar to fall through to the native window frame caption for window dragging.
+- `remove-toolbar-dividers.patch`: Removes redundant vertical visual dividers between extension icons and pinned toolbar containers.
+- `improve-flags-webui.patch`: Enhances `chrome://flags` search box styling and displays explicit state indicators for overridden flags.
 
 ### 3.3 Privacy, Degoogling & Network Layer Hardening
 - `split-clienthello.patch`: Randomly splits TLS ClientHello packets in BoringSSL, helping resist TLS fingerprinting and bypass SNI-based blocking.
@@ -123,6 +144,11 @@
 - `clean-omnibox-suggestions.patch`: Removes Google promotional action buttons ("pedals") from omnibox suggestions.
 - `ridiculous-google-compat-exceptions.patch`: Removes hardcoded Google sign-in exceptions.
 - `degoogle-context-menu.patch`: Strips Google Search, Lens, Gemini, Live Caption, QR code, Translate, Reading Mode, and Reading List items from tab, page, and link context menus.
+- `fix-instance-id-stuck.patch`: Prevents InstanceID task queues from deadlocking when GCM registration is unavailable or blocked.
+- `omnibox-default-search-icon.patch`: Replaces dynamic remote default search engine icons with a generic privacy-respecting search icon.
+- `break-favicons.patch`: Strips remote prepopulated search engine favicon and logo URLs to prevent background network pings.
+- `remove-unused-ai-resources.patch`: Prunes dead AI and side-panel assets (Actor, Glic, Compose, Skills, Lens, TTC) from packaged resource pak bundles.
+- `remove-experimental-webui.patch`: Disables experimental WebUI omnibox and popup interfaces, removing unused WebUI pak overhead.
 
 ### 3.4 Ergonomics & Web Content Control
 - `shift-right-click-context-menu.patch`: Forces the browser's native context menu to open on `Shift + Right-Click`, bypassing pages that block right-clicking.
@@ -138,6 +164,14 @@
 - `hide-page-actions-flag.patch`: Adds a flag to hide page action icons in the location bar.
 - `hide-pip-live-caption-button.patch` & `disable-live-caption-completely.patch`: Hides the Live Caption toggle in Picture-in-Picture windows and removes the Live Caption background service and model downloader.
 - `disable-non-standard-auth-features.patch`: Disables non-standard web authentication features (including `kFedCmDelegation`).
+- `remove-dead-toolbar-actions.patch`: Removes defunct Google toolbar actions and side-panel entrypoints (Passwords, Lens, Reading List, Shopping, etc.).
+- `remove-reading-list-from-app-menu.patch`: Removes Reading List from the primary bookmark sub-menu in the main application menu.
+- `remove-dead-profile-actions.patch`: Removes Google account and autofill manager management buttons from the profile menu.
+- `clean-up-installed-extension-bubble.patch`: Strips redundant promotional text and shortcuts links from the post-installation dialog.
+- `disable-tab-group-editor-footer.patch`: Disables the educational footer nag in tab group editor bubbles.
+- `bookmark-open-all-confirmation-flag.patch`: Enables confirmation dialog before opening 15 or more bookmarks simultaneously.
+- `add-default-browser-reject-button.patch`: Adds a permanent "Don't ask again" reject button to the default browser infobar, backed by `browser.default_browser_infobar_rejected`.
+- `remove-devtools-annoyances.patch`: Removes Gemini AI rebranding banners, feedback links, GDP badges, and Google account sync sections from DevTools.
 
 ## 4. Curated Cromite Patches (`patches/cromite/`)
 
