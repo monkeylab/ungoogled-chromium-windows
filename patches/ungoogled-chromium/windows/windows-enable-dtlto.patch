@@ -9,9 +9,9 @@
 +      ldflags += [
 +        "/thinlto-distributor:/usr/bin/python3",
 +        "/thinlto-distributor-arg:" +
-+          rebase_path("//tools/dtlto/local_parallel.py", root_build_dir),
++            rebase_path("//tools/dtlto/local_parallel.py", root_build_dir),
 +        "/thinlto-remote-compiler:" +
-+          rebase_path("$clang_base_path/bin/clang", root_build_dir),
++            rebase_path("$clang_base_path/bin/clang", root_build_dir),
 +      ]
 +    }
  
@@ -26,14 +26,14 @@
 +      ldflags += [
 +        "/thinlto-distributor:/usr/bin/python3",
 +        "/thinlto-distributor-arg:" +
-+          rebase_path("//tools/dtlto/local_parallel.py", root_build_dir),
++            rebase_path("//tools/dtlto/local_parallel.py", root_build_dir),
 +        "/thinlto-remote-compiler:" +
-+          rebase_path("$clang_base_path/bin/clang", root_build_dir),
++            rebase_path("$clang_base_path/bin/clang", root_build_dir),
 +      ]
-+    }
- 
-     if (toolchain_supports_rust_thin_lto) {
-       # We always point Rust to a linker that performs LTO, so we don't want
+     } else {
+       ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
+       ldflags += [ "-Wl,--lto-CGO3" ]
+     }
 --- /dev/null
 +++ b/tools/dtlto/local_parallel.py
 @@ -0,0 +1,47 @@
