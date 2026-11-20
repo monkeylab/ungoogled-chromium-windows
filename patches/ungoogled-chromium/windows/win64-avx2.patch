@@ -1,6 +1,6 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -539,10 +539,10 @@ config("compiler") {
+@@ -545,10 +545,10 @@ config("compiler") {
    # Linux/Android/Fuchsia common flags setup.
    # ---------------------------------
    if (is_linux || is_chromeos || is_android || is_fuchsia) {
@@ -15,7 +15,7 @@
  
      if (!is_clang) {
        # Use pipes for communicating between sub-processes. Faster.
-@@ -665,9 +665,9 @@ config("compiler") {
+@@ -671,9 +671,9 @@ config("compiler") {
  
      # TODO(crbug.com/40192287): Investigate why/if this should be needed.
      if (is_win) {
@@ -27,7 +27,7 @@
      }
  
      # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF.
-@@ -996,6 +996,11 @@ config("compiler") {
+@@ -1002,6 +1002,11 @@ config("compiler") {
  
      # We use clang-rt sanitizer runtimes.
      "-Zexternal-clangrt",
@@ -35,11 +35,11 @@
 +    "-Ctarget-cpu=x86-64-v3",
 +    "-Cllvm-args=-fp-contract=fast",
 +    "-Ztune-cpu=generic",
-+    #"-Ctarget-feature=+prefer-no-gather,+prefer-no-scatter",
++    "-Zllvm-target-feature=+prefer-no-gather,+prefer-no-scatter",
    ]
  
    if (!is_win || force_rustc_color_output) {
-@@ -1280,12 +1285,29 @@ config("disallow_unstable_features") {
+@@ -1286,12 +1291,29 @@ config("disallow_unstable_features") {
  # building with ThinLTO, no optimization is performed in the link step.
  config("thinlto_optimize_default") {
    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
@@ -70,7 +70,7 @@
      }
  
      if (is_win) {
-@@ -1329,8 +1351,39 @@ config("thinlto_optimize_max") {
+@@ -1335,8 +1357,39 @@ config("thinlto_optimize_max") {
  
      if (is_win) {
        ldflags = [ "/opt:lldlto=" + lto_opt_level ]
@@ -110,7 +110,7 @@
      }
  
      if (is_win) {
-@@ -1807,7 +1860,7 @@ config("runtime_library") {
+@@ -1813,7 +1866,7 @@ config("runtime_library") {
    }
  
    if (use_safe_libcxx) {
@@ -119,7 +119,7 @@
    } else {
      defines += [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
    }
-@@ -2757,10 +2810,13 @@ config("optimize_max") {
+@@ -2775,10 +2828,13 @@ config("optimize_max") {
      # Favor speed over size, /O2 must be before the common flags.
      # /O2 implies /Ot, /Oi, and /GF.
      cflags = [ "/O2" ] + common_optimize_on_cflags
