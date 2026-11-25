@@ -1,0 +1,23 @@
+--- a/net/quic/quic_session_pool.cc
++++ b/net/quic/quic_session_pool.cc
+@@ -2955,8 +2955,7 @@ QuicSessionPool::CreateCryptoConfigHandle(
+               cert_verifier_, transport_security_state_, sct_auditing_delegate_,
+               std::move(hostnames_to_allow_unknown_roots),
+               key.network_anonymization_key),
+-          std::make_unique<quic::QuicClientSessionCache>(
+-              kDefaultQuicSessionCacheSize),
++          nullptr,
+           kDefaultQuicSessionCacheSize, this);
+
+   quic::QuicCryptoClientConfig* crypto_config = crypto_config_owner->config();
+--- a/net/socket/ssl_client_socket_impl.cc
++++ b/net/socket/ssl_client_socket_impl.cc
+@@ -1653,7 +1653,7 @@
+ }
+
+ bool SSLClientSocketImpl::IsCachingEnabled() const {
+-  return context_->ssl_client_session_cache() != nullptr;
++  return false;
+ }
+
+ void SSLClientSocketImpl::MaybeClearEarlyDataCache(int error) {

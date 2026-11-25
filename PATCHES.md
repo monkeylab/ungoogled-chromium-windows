@@ -26,6 +26,8 @@
 - `windows-clipboard-off-the-record.patch`: Isolates text and links copied in incognito mode from the Windows 10/11 clipboard history (`Win + V`) and cloud clipboard synchronization.
 - `windows-block-tsf-recall-learning.patch`: Signals Windows Text Services Framework to block Windows 11 Copilot+ Recall OCR screen capture and cloud IME dictionary harvesting.
 - `windows-keep-window-open-on-last-tab.patch`: Automatically opens a new blank tab when closing the last tab, preventing accidental browser window termination.
+- `windows-disable-reading-mode.patch`: Completely disables broken Reading Mode (Read Anything) entry points, address bar chips, background optimization guide polling, and WebUI routes.
+- `windows-force-context-menu-on-shift-right-click.patch`: Forces the native context menu on Shift + Right-Click even when overridden by web scripts, preserving text selection and search context actions while safeguarding interactive Canvas and WebGL elements.
 
 ## 2. Curated Brave Patches (`patches/brave/`)
 
@@ -71,8 +73,15 @@
 - `toolbar-window-frame-hit-test.patch`: Allows clicking and dragging the window from empty non-interactive areas in the top toolbar.
 - `remove-toolbar-dividers.patch`: Removes redundant vertical dividers between extension icons and pinned toolbar items.
 - `improve-flags-webui.patch`: Improves `chrome://flags` search box styling and highlights modified flags.
+- `status-bubble.patch`: Redesigns the bottom-left URL status bubble into a modern floating capsule with 16px rounded corners, subtle drop shadow, and 8px floating margins.
+- `toast.patch`: Compacts notification toasts to an 8px rounded container with smooth scaling animations to minimize viewport occlusion.
+- `bookmark-button-bg-fix.patch`: Restores classic 6px rounded rectangle hover highlights on bookmark bar buttons.
 
 ### 3.3 Privacy, Degoogling & Network Layer Hardening
+- `crash-reporter-privacy-tweaks.patch`: Disables Crashpad automatic uploads, zeroes client UUID, limits crash dump sizes, and strips sensitive values from command-line crash annotations.
+- `remove-history-sync-promo.patch`: Removes the sign-in and sync promotional banner from the `chrome://history` page.
+- `clear-browsing-data-popup.patch`: Removes the Google account data management link from the Clear Browsing Data dialog and defaults data types to expanded.
+- `disable-history-clusters.patch`: Disables History Clusters (Journeys) grouping and background analysis.
 - `split-clienthello.patch`: Randomly splits TLS ClientHello packets to resist TLS fingerprinting and SNI-based blocking.
 - `spoof-chrome-ua-brand.patch`: Replaces Google Chrome brand tokens with generic identifiers in Client Hints.
 - `reduce-accept-language-headers.patch`: Trims `Accept-Language` headers to reduce language-based fingerprinting.
@@ -87,7 +96,6 @@
 - `remove-experimental-webui.patch`: Disables experimental WebUI popups and prunes unused WebUI resource bundles.
 
 ### 3.4 Ergonomics & Web Content Control
-- `shift-right-click-context-menu.patch`: Forces the browser's native context menu to open on Shift + Right-Click, bypassing page right-click blocks.
 - `force-paste-action.patch`: Forces paste operations to work in input fields that attempt to block clipboard pasting.
 - `close-tabs-to-left.patch`: Adds a "Close tabs to the left" option to the tab context menu.
 - `open-new-tabs-next-to-active-tab-option.patch`: Adds an option to open new tabs directly next to the active tab rather than at the end of the strip.
@@ -108,6 +116,9 @@
 - `bookmark-open-all-confirmation-flag.patch`: Prompts for confirmation when opening 15 or more bookmarks simultaneously.
 - `add-default-browser-reject-button.patch`: Adds a permanent "Don't ask again" button to the default browser prompt.
 - `remove-devtools-annoyances.patch`: Removes AI promotional banners, feedback surveys, and Google account sync sections from DevTools.
+- `disable-side-panel-flyover.patch`: Uses continuous frame resizing for side-panel animations to eliminate jerky layout reflows on Windows.
+- `simplify-side-panel-position.patch`: Disables experimental ContextualTasks panels and simplifies side-panel alignment to a straightforward left/right radio setting.
+- `fix-tab-sync-unreached-error.patch`: Removes redundant tab selection sync checks when closing tabs in saved tab groups, preventing potential main process crashes.
 
 ## 4. Curated Cromite Patches (`patches/cromite/`)
 
@@ -115,6 +126,10 @@
 - `Fonts-fingerprinting-mitigation.patch`: Restricts local font enumeration to mitigate font-based tracking.
 - `Media-fingerprinting-mitigations.patch`: Restricts video decoder capability probing in WebCodecs to prevent hardware codec fingerprinting.
 - `Reduce-input-capability-fingerprinting-through-normalization.patch`: Normalizes reported mouse, pen, and touch capabilities to reduce device diversity.
+- `Prevent-mouse-wheel-fingerprinting-on-Windows.patch`: Normalizes Windows mouse wheel tick delta to `+1` / `-1` to eliminate high-entropy hardware scroll wheel fingerprinting.
+- `PublicKeyCredential-fingerprinting-mitigations.patch`: Masks Windows Hello biometric availability and checks permissions before background BLE device discovery.
+- `Disable-UA-full-version.patch`: Reduces client hints `uaFullVersion` and brand version list to major version only (`X.0.0.0`).
+- `Remove-navigator.connection-info.patch`: Overrides `navigator.connection` network type, RTT, and bandwidth with static default values to block network status fingerprinting.
 - `Disable-support-for-pointer-device-id.patch`: Disables stylus pen device ID reporting.
 - `Keyboard-protection-flag.patch`: Adds a flag to block websites from querying physical keyboard layout mappings.
 - `Set-caret-blink-interval-to-default.patch`: Uses a fixed caret blink interval to prevent cursor timing fingerprinting.
@@ -138,12 +153,17 @@
 - `Clear-CORS-Preflight-Cache-on-clearing-data.patch`: Clears the CORS preflight cache whenever browsing data is deleted.
 - `Disable-Service-and-Shared-workers-on-3P-iframe.patch`: Blocks Service Workers and Shared Workers inside third-party iframes.
 - `Disable-Sticky-User-Activation-Across-Same-Origin-Navigation.patch`: Resets user gesture activation state when navigating between same-origin pages.
+- `Disable-third-party-origin-trials.patch`: Completely disables third-party origin trials by invalidating the public key and forcing supported status to `false`.
+- `Disable-text-fragments-by-default.patch`: Disables Scroll-to-Text Fragments (`#:~:text=`) by default to prevent cross-origin sensitive text side-channel probing.
 
 ### 4.3 Network & Protocol Hardening
 - `Reduce-HTTP-headers-in-DoH-requests-to-bare-minimum.patch`: Strips non-essential HTTP headers from DNS-over-HTTPS (DoH) queries.
 - `Replace-DoH-probe-domain-with-RIPE-domain.patch`: Replaces the default Google DoH probe domain with neutral RIPE NCC servers.
 - `Disable-requests-for-single-word-Omnibar-searches.patch`: Stops single-word omnibox queries from triggering local intranet DNS lookups.
 - `Enable-Global-Privacy-Control.patch`: Sends `Sec-GPC: 1` on web requests and sets `navigator.globalPrivacyControl` to `true`.
+- `Remove-auth-header-upon-cross-origin-redirect.patch`: Strips the `Authorization` header on cross-origin HTTP redirects to avoid credential leakage.
+- `Disable-TLS-resumption.patch`: Disables TLS 1.2/1.3 session tickets and session caching to prevent long-lived cross-network tracking without cookies.
+- `Enable-Do-Not-Track-by-default.patch`: Enables the `DNT: 1` header by default alongside existing Global Privacy Control protection.
 
 ### 4.4 Windows Ecosystem & Compatibility Support
 - `Override-the-MV2-deprecation.patch`: Overrides Manifest V2 deprecation, allowing classic extensions (such as uBlock Origin MV2) to run normally.
